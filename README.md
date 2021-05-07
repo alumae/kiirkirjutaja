@@ -21,37 +21,60 @@ It consists of the following components:
 ## Using
 
 Kiirkirjutaja has a lot of dependencies and therefore the recommended way to run it is though the Docker container. 
-If you want to run it outside the container, please check the docker/Dockerfile file for how
+If you want to run it outside the container, please check the docker/Dockerfile file for how to
 install all the dependencies.
 
-Running and using the Docker container is outlined below:
+Running and using the Docker container (with generic Estonian models) is outlined below:
 
-  - Start Docker container
+Pull the Docker image:
 
-    docker run --shm-size 2GB --name kiirkirjutaja --rm -d -t kiirkirjutaja
+    docker pull alumae/kiirkirjutaja:latest
 
-  - Decode a Vikerraadio real-time stream:
+Start Docker container (use the `--shm-size 2GB` argument because the program uses shared memory between for IPC):
+
+    docker run --shm-size 2GB --name kiirkirjutaja --rm -d -t alumae/kiirkirjutaja:latest
+
+Decode a Vikerraadio real-time stream:
 
     docker exec -it kiirkirjutaja python main.py https://icecast.err.ee/vikerraadio.mp3
 
 By default, Kiirkirjutaja writes recognized words to stdout, word by word. Note that there is a delay 
-in recognition results, around 2-3 seconds, because ow two factors:
+in recognition results, around 2-3 seconds, because of two factors:
 
   - We use a speaker change detection model that needs a lookahead buffer of 1 second, which delays the recognition by 1 second;
   - We use various postprocessing steps (compound word reconstruction, punctuation, words to numbers) which change the decoded
-  words, but the way how the changes are dependent on future words, therefore the already recognized words would change, 
+  words, but the changes are dependent on future words, therefore the already recognized words could change, 
   depending on the words in the close future (sorry about the bad explanation). Anyway, that's why Kiirkirjutaja outputs
-  a word only after 3 more words have been recognized (unless it's a segment end, in which case we can output everything, since
-  each segment will be post-processed in isolation).
+  a word only after 3 more words have been recognized, because only then it's relativey sure that it won't change
+  (unless it's a segment end, in which case we can output everything, since
+  each segment will be post-processed independently).
 
 You can also write the word-by-word output to a file (can be a named pipe, if you want to process the generated
-subtitles using some external program):
+subtitles using some external program). E.g.:
 
     docker exec -it kiirkirjutaja python main.py --word-output-file out.txt https://icecast.err.ee/vikerraadio.mp3
 
-  or pipe it to extrnal program that reads the word-by-word output from stdin:
+  or pipe it directly to an external program that reads the (unbuffered) word-by-word output from stdin:
 
     docker exec -it kiirkirjutaja python main.py --word-output-file >(some-external-program) https://icecast.err.ee/vikerraadio.mp3
+
+Kiirkirjutaja uses `ffmpeg` to decode the given file/stream and convert it to mono, 16-bit, 16 kHz audio stream. 
+
+If the input stream
+is called "-", it is assumed to be an already decoded mono/16-bit/16kHz raw audio stream. This way you can stream raw audio to it. For example, to stream
+audio directly from the microphone, use something like this:
+
+    rec -t raw -r 16k -e signed -b 16 -c 1 - | docker exec -i kiirkirjutaja python main.py -
+
+If the server with Kiirkirjutaja resides on a remote machine, you can stream audio via network using `netcat`. On server:
+
+    nc -l 8022 | docker exec -i kiirkirjutaja python main.py -
+
+On desktop:
+
+    rec -t raw -r 16k -e signed -b 16 -c 1 - | nc server_name 8022
+
+If the server port (8022) is behind a firewall, it has to done via an SSH tunnel, but this left as an exercise to the reader :)
 
 There are a few other output mechanisms (or 'presenters', as we call them) implemented:
 
@@ -93,7 +116,7 @@ FAB Live is professional media subtitling software.
 In order to use Kiirkirjutaja with FAB Live, first go to "Options -> Special -> Speech interface" in FAB, and set "Send mode" to "Word by word".
 
 Now set the "Mode" in FAB to "Speech" and start Kiirkirjutaja with the following options (change localhost to the machine where FAB is running,
-and make sure the port is accessible ro the machine running Kiirkirjutaja):
+and make sure the port is accessible to the machine running Kiirkirjutaja):
 
     docker exec -it kiirkirjutaja python main.py --fab-speechinterface-url http://localhost:8001/speechinterface rtmp://your-source-video
 
