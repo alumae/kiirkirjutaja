@@ -28,6 +28,7 @@ RUN apt-get update && \
         pkg-config \
         ca-certificates \
         libsndfile1 \
+        ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 RUN \
@@ -74,7 +75,7 @@ RUN conda install -c conda-forge pynini=2.1.3
 
 RUN conda install pytorch=1.8.1 torchvision torchaudio=0.8.1 cpuonly -c pytorch
 
-RUN pip install pytorch-lightning==1.2.5 ray torchmetrics==0.2.0 \
+RUN pip install pytorch-lightning==1.2.5 'ray[default]' torchmetrics==0.2.0 \
     tokenizers pytorch-nlp py-term matplotlib scipy \
     librosa lxml audiomentations pytest
 
@@ -84,10 +85,12 @@ RUN git clone https://github.com/alumae/online_speaker_change_detector.git /opt/
 
 RUN git clone https://github.com/alumae/et-g2p-fst.git /opt/et-g2p-fst
 
-RUN echo '2021-05-07_10:41' >/dev/null && git clone https://github.com/alumae/kiirkirjutaja.git /opt/kiirkirjutaja
+RUN echo '2021-05-07_11:13' >/dev/null && git clone https://github.com/alumae/kiirkirjutaja.git /opt/kiirkirjutaja
 
 COPY ./models /opt/kiirkirjutaja/models
 
 ENV PYTHONPATH="/opt/streaming-punctuator:/opt/online-speaker-change-detector:/opt/et-g2p-fst"
+
+WORKDIR /opt/kiirkirjutaja
 
 CMD ["/bin/bash"] 

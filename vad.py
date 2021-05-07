@@ -114,11 +114,12 @@ class SpeechSegmentGenerator:
         self.vad_iter = VADiterator()
         self.speech_segment_queue = Queue(10)
 
+        logging.info(f"Starting streaming from {input_file}")
         if input_file == "-":
             self.stream = sys.stdin.buffer
         else:
             self.stream = subprocess.Popen(['ffmpeg', '-loglevel', 'quiet', '-i',
-                                            sys.argv[1],
+                                            input_file,
                                             '-ar', '16000' , '-ac', '1', '-f', 's16le', '-'],
                                             stdout=subprocess.PIPE).stdout
 

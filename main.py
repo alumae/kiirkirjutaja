@@ -31,7 +31,6 @@ compound_reconstructor = CompoundReconstructor()
 remote_words2numbers = RemoteWords2Numbers.remote()
 remote_punctuate = RemotePunctuate.remote("models/punctuator/checkpoints/best.ckpt", "models/punctuator/tokenizer.json")
 
-
 def process_result(result):
     result = unk_decoder.post_process(result)
     text = ""
@@ -52,19 +51,21 @@ def main(args):
     elif args.zoom_caption_url is not None:
         presenter = ZoomPresenter(captions_url=args.zoom_caption_url)
     else:
-        presenter = WordByWordPresenter()
+        presenter = WordByWordPresenter(args.word_output_file)
     
     scd_model = SCDModel.load_from_checkpoint("models/online-speaker-change-detector/checkpoints/epoch=102.ckpt")
     vosk_model = vosk.Model("models/asr_model")
 
     speech_segment_generator = SpeechSegmentGenerator(args.input_file)
     for speech_segment in speech_segment_generator.speech_segments():
+        #print("New segment")
         presenter.segment_start()
 
         speech_segment_start_time = speech_segment.start_sample / 16000
 
         turn_generator = TurnGenerator(scd_model, speech_segment)        
         for i, turn in enumerate(turn_generator.turns()):
+            #print("New turn")
             if i > 0:
                 presenter.new_turn()
             turn_start_time = (speech_segment.start_sample + turn.start_sample) / 16000
@@ -87,7 +88,9 @@ if __name__ == '__main__':
     parser.add_argument('--youtube-caption-url', type=str)
     parser.add_argument('--fab-speechinterface-url', type=str)
     parser.add_argument('--zoom-caption-url', type=str)
+    parser.add_argument('--word-output-file', type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('input_file')
+
     args = parser.parse_args()
 
     main(args)

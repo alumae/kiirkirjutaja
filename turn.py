@@ -13,6 +13,7 @@ class TurnGenerator:
         self.model = model
         self.model.eval()
         self.speech_segment_queue = Queue(10)
+        self.streaming_decoder = StreamingDecoder(self.model)
         thread = threading.Thread(target=self.run)
         thread.daemon = True
         thread.start()
@@ -26,9 +27,7 @@ class TurnGenerator:
                 return
 
     def run(self):                        
-        streaming_decoder = StreamingDecoder(self.model)
         sample_pos = 0
-
         chunk_queue = Queue(10)
         speech_segment = SpeechSegment(sample_pos, chunk_queue)
         self.speech_segment_queue.put(speech_segment)                                                    
@@ -37,8 +36,7 @@ class TurnGenerator:
         for chunk in self.chunk_generator.chunks():
             buffer = torch.cat([buffer, chunk])
             pos = 0
-            for i, probs in enumerate(streaming_decoder.process_audio(chunk.numpy())):
-                
+            for i, probs in enumerate(self.streaming_decoder.process_audio(chunk.numpy())):
                 if probs[1] > self.threshold:     
                     chunk_queue.put(None)
                     logging.debug(f"Speaker change detected at sample {sample_pos}")

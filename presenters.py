@@ -117,23 +117,20 @@ class FabLivePresenter(SubtitlePresenter):
         
 
 
-class WordByWordPresenter(ResultPresenter):
+class AbstractWordByWordPresenter(ResultPresenter):
 
     def __init__(self):
         self.word_delay = 3
         self.current_words = []
         self.num_sent_words = 0
         self.is_sentence_start = True
+        
 
     def _send_word(self, word):
-        if self.num_sent_words > 0:
-            print(" ", end="")
-        print(word, end="")
-        sys.stdout.flush()
+        pass
     
     def _send_final(self):
-        print("")
-
+        pass
 
     def partial_result(self, text):
         text = prettify(text, self.is_sentence_start)
@@ -169,7 +166,23 @@ class WordByWordPresenter(ResultPresenter):
         self._send_word("- ")
 
 
-class YoutubeLivePresenter(WordByWordPresenter):
+class WordByWordPresenter(AbstractWordByWordPresenter):
+    def __init__(self, output_file):
+        super().__init__()        
+        self.output_file = output_file
+
+    def _send_word(self, word):
+        if self.num_sent_words > 0:
+            print(" ", end="", file=self.output_file)
+        print(word, end="", file=self.output_file)
+        self.output_file.flush()
+    
+    def _send_final(self):
+        print("", file=self.output_file)
+        self.output_file.flush()
+
+
+class YoutubeLivePresenter(AbstractWordByWordPresenter):
     def __init__(self, captions_url):
         super().__init__()        
         self.captions_url = captions_url
@@ -207,7 +220,7 @@ class YoutubeLivePresenter(WordByWordPresenter):
 
 
 
-class FabLiveWordByWordPresenter(WordByWordPresenter):
+class FabLiveWordByWordPresenter(AbstractWordByWordPresenter):
     def __init__(self, fab_speech_iterface_url):
 
         super().__init__()        
@@ -227,7 +240,7 @@ class FabLiveWordByWordPresenter(WordByWordPresenter):
         #self._send_word("{SEND}")
 
 
-class ZoomPresenter(WordByWordPresenter):
+class ZoomPresenter(AbstractWordByWordPresenter):
 
     def __init__(self, captions_url):
         super().__init__()        
