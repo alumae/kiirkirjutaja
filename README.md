@@ -61,9 +61,12 @@ subtitles using some external program). E.g.:
 
     docker exec -it kiirkirjutaja python main.py --word-output-file out.txt https://icecast.err.ee/vikerraadio.mp3
 
-  or pipe it directly to an external program that reads the (unbuffered) word-by-word output from stdin:
+But of course this file will be on the Docker container filesystem.
 
-    docker exec -it kiirkirjutaja python main.py --word-output-file >(some-external-program) https://icecast.err.ee/vikerraadio.mp3
+If you want to pipe the word-by-word output to another program, you can just capture the stdout from the decoding process,
+as all the warning and informatuon messages are written to stderr. For example:
+
+      docker exec -it kiirkirjutaja python main.py https://icecast.err.ee/vikerraadio.mp3 | some_external_program
 
 Kiirkirjutaja uses `ffmpeg` to decode the given file/stream and convert it to mono, 16-bit, 16 kHz audio stream. 
 

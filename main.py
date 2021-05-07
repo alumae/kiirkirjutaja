@@ -21,6 +21,7 @@ from punctuate import Punctuate
 #from confidence import confidence_filter
 from presenters import *
 
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 ray.init(num_cpus=4) 
 
 RemotePunctuate = ray.remote(Punctuate)
@@ -82,7 +83,7 @@ def main(args):
         
 
 if __name__ == '__main__':
-    logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+    
 
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--youtube-caption-url', type=str)
