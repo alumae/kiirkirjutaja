@@ -3,8 +3,8 @@ from streaming_punctuator.model import StreamingPunctuatorModel
 
 class Punctuate():
 
-    def __init__(self, model_checkpoint):
-      self.model = StreamingPunctuatorModel.load_from_checkpoint(model_checkpoint)
+    def __init__(self, model_checkpoint, tokenizer_file):
+      self.model = StreamingPunctuatorModel.load_from_checkpoint(model_checkpoint, tokenizer_file=tokenizer_file)
       self.model.eval()
 
 

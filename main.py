@@ -18,7 +18,7 @@ from unk_decoder import UnkDecoder
 from compound import CompoundReconstructor
 from words2numbers import Words2Numbers
 from punctuate import Punctuate
-from confidence import confidence_filter
+#from confidence import confidence_filter
 from presenters import *
 
 ray.init(num_cpus=4) 
@@ -29,7 +29,7 @@ RemoteWords2Numbers = ray.remote(Words2Numbers)
 unk_decoder = UnkDecoder()
 compound_reconstructor = CompoundReconstructor()
 remote_words2numbers = RemoteWords2Numbers.remote()
-remote_punctuate = RemotePunctuate.remote("models/punctuator/checkpoints/best.ckpt")
+remote_punctuate = RemotePunctuate.remote("models/punctuator/checkpoints/best.ckpt", "models/punctuator/tokenizer.json")
 
 
 def process_result(result):

@@ -98,10 +98,7 @@ class SpeechSegment:
 @ray.remote
 class VadModelWrapper():
     def __init__(self):
-        self.model, _ = torch.hub.load(repo_or_dir='models/snakers4_silero-vad',
-                                model='silero_vad',
-                                source="local",
-                                force_reload=False)
+        self.model = torch.jit.load("models/snakers4_silero-vad/files/model.jit")
 
     def forward(self, batch):
         return self.model(batch)
@@ -113,11 +110,8 @@ class SpeechSegmentGenerator:
         neg_trig_sum = 0.07
         self.num_steps = 8
         self.num_samples_per_window = 4000
-
         self.model_wrapper = VadModelWrapper.remote()
-
         self.vad_iter = VADiterator()
-
         self.speech_segment_queue = Queue(10)
 
         if input_file == "-":
