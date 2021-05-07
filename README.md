@@ -20,7 +20,7 @@ It consists of the following components:
 
 ## Hardware requirements
 
-  - Around 16 GM memory should be safe
+  - Around 16 GB memory should be enough (probably you can do with less)
   - Fairly modern fast CPU (development machine has Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz)
   - 4 free CPU cores
 
