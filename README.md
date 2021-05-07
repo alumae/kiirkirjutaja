@@ -18,6 +18,13 @@ It consists of the following components:
   * Puncutator, LSTM-based (https://github.com/alumae/streaming-punctuator)
   * Words-to-numbers converter (FST-based, using Pynini)
 
+## Hardware requirements
+
+  - Around 16 GM memory should be safe
+  - Fairly modern fast CPU (development machine has Intel(R) Xeon(R) CPU E5-2699 v4 @ 2.20GHz)
+  - 4 free CPU cores
+
+
 ## Using
 
 Kiirkirjutaja has a lot of dependencies and therefore the recommended way to run it is though the Docker container. 
@@ -28,13 +35,13 @@ Running and using the Docker container (with generic Estonian models) is outline
 
 Pull the Docker image:
 
-    docker pull alumae/kiirkirjutaja:latest
+    docker pull koodivaramu.eesti.ee:5050/taltechnlp/kiirkirjutaja
 
 Start Docker container (use the `--shm-size 2GB` argument because the program uses shared memory between for IPC):
 
-    docker run --shm-size 2GB --name kiirkirjutaja --rm -d -t alumae/kiirkirjutaja:latest
+    docker run --shm-size 2GB --name kiirkirjutaja --rm -d -t koodivaramu.eesti.ee:5050/taltechnlp/kiirkirjutaja
 
-Decode a Vikerraadio real-time stream:
+Decode a Vikerraadio real-time stream (it takes 10-20 seconds to load the models, and you'll get some warnings that can be usually ignored):
 
     docker exec -it kiirkirjutaja python main.py https://icecast.err.ee/vikerraadio.mp3
 
