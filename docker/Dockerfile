@@ -79,15 +79,17 @@ RUN pip install pytorch-lightning==1.2.5 'ray[default]' torchmetrics==0.2.0 \
     tokenizers pytorch-nlp py-term matplotlib scipy \
     librosa lxml audiomentations pytest
 
+COPY ./models /opt/models
+
 RUN git clone https://github.com/alumae/streaming-punctuator /opt/streaming-punctuator
 
 RUN git clone https://github.com/alumae/online_speaker_change_detector.git /opt/online-speaker-change-detector
 
 RUN git clone https://github.com/alumae/et-g2p-fst.git /opt/et-g2p-fst
 
-RUN echo '2021-05-07_11:13' >/dev/null && git clone https://github.com/alumae/kiirkirjutaja.git /opt/kiirkirjutaja
-
-COPY ./models /opt/kiirkirjutaja/models
+RUN echo '2021-05-07_11:13' >/dev/null \
+    && git clone https://github.com/alumae/kiirkirjutaja.git /opt/kiirkirjutaja \
+    && cd /opt/kiirkirjutaja && ln -s ../models
 
 ENV PYTHONPATH="/opt/streaming-punctuator:/opt/online-speaker-change-detector:/opt/et-g2p-fst"
 

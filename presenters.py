@@ -1,17 +1,17 @@
 import textwrap
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import sys
-
+import re
 import term
 
 class ResultPresenter:
 
-    def partial_result(self, text):
+    def partial_result(self, words):
         pass
 
-    def final_result(self, text):
+    def final_result(self, words):
         pass
 
     def segment_start(self):
@@ -23,23 +23,22 @@ class ResultPresenter:
     def new_turn(self):
         pass
 
-def prettify(text, is_sentence_start):
-    words = text.split()
-    result = ""
-    last_word = ""
+def prettify(words, is_sentence_start):
+    #words = text.split()
+    #result = ""
     for word in words:
-        if last_word in list(".?!"):
-            word = word[0].upper() + word[1:]
-        if word in list(",.!?"):
-            result += word
-        else:
-            if len(result) > 0:
-                result += " "
-            result += word
-        last_word = word
-    if is_sentence_start and len(result) > 0:
-        result = result[0].upper() + result[1:]
-    return result
+        if is_sentence_start:
+            word["word"] = word["word"][0].upper() + word["word"][1:]
+        is_sentence_start = False
+
+        if word["word"][0] in list("?.!"):
+            word["word"] = word["word"].title()
+
+        if re.match(r".* [.!?]$", word["word"]):
+            is_sentence_start = True
+        word["word"] = re.sub(r"(.*) ([,.?!])$", r"\1\2", word["word"])
+
+    return words
 
 
 class SubtitlePresenter(ResultPresenter):
@@ -98,25 +97,6 @@ class TerminalPresenter(SubtitlePresenter):
         term.writeLine(self.current_lines[1])
 
 
-
-class FabLivePresenter(SubtitlePresenter):
-    def __init__(self, fab_speech_iterface_url, max_chars=40):
-
-        super().__init__(max_chars)        
-        self.fab_speech_iterface_url = fab_speech_iterface_url
-        
-    def _update(self):
-        logging.info("Sending captions to FAB")
-        #server = ' region:reg1#cue1' 
-        server = ""
-        
-        text = self.current_lines[0] + '{NL}' + self.current_lines[1]  + '{SEND}'
-        logging.info(f"Sending text: {text}")
-        resp = requests.get(url=self.fab_speech_iterface_url, params={"text": text})
-        logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
-        
-
-
 class AbstractWordByWordPresenter(ResultPresenter):
 
     def __init__(self):
@@ -132,25 +112,25 @@ class AbstractWordByWordPresenter(ResultPresenter):
     def _send_final(self):
         pass
 
-    def partial_result(self, text):
-        text = prettify(text, self.is_sentence_start)
-        words = text.split()
+    def partial_result(self, words):
+        words = prettify(words, self.is_sentence_start)
+        
         if len(words) - self.word_delay > self.num_sent_words:
             for i in range(self.num_sent_words,  len(words) - self.word_delay):
                 self._send_word(words[i])
                 self.num_sent_words += 1
 
-    def final_result(self, text):
-        text = prettify(text, self.is_sentence_start)
+    def final_result(self, words):
+        words = prettify(words, self.is_sentence_start)
 
-        words = text.split()
+        #words = text.split()
         for i in range(self.num_sent_words,  len(words)):
             self._send_word(words[i])
             self.num_sent_words += 1
         
         self._send_final()
         self.num_sent_words = 0
-        if len(text) > 0 and text[-1] in list("!?."):
+        if len(words) > 0 and words[-1]["word"][-1] in list("!?.,"):
             self.is_sentence_start = True
         else:
             self.is_sentence_start = False
@@ -163,7 +143,7 @@ class AbstractWordByWordPresenter(ResultPresenter):
         pass
 
     def new_turn(self):
-        self._send_word("- ")
+        self._send_word({"word" : "- ", "start": 0.0})
 
 
 class WordByWordPresenter(AbstractWordByWordPresenter):
@@ -172,9 +152,9 @@ class WordByWordPresenter(AbstractWordByWordPresenter):
         self.output_file = output_file
 
     def _send_word(self, word):
-        if self.num_sent_words > 0:
+        if self.num_sent_words > 0 and word["word"][0] not in list(".!?"):
             print(" ", end="", file=self.output_file)
-        print(word, end="", file=self.output_file)
+        print(word["word"], end="", file=self.output_file)
         self.output_file.flush()
     
     def _send_final(self):
@@ -188,8 +168,11 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
         self.captions_url = captions_url
         self.seq = 1
         self.current_words = []
-        self.min_num_chars = 42
+        self.min_num_chars = 62
         self.current_word_timestamps = []
+
+    def segment_start(self):
+        self.segment_start_time = datetime.utcnow()
 
     def _do_send(self):
         if len(self.current_words) == 0:
@@ -198,7 +181,8 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
         server = ' region:reg1#cue1' 
         headers = {'content-type': 'text/plain'}
         #Formatting the time properly
-        post = "\n".join([time + '\n ' + word  for word, time in zip(self.current_words, self.current_word_timestamps)])
+    
+        post = "\n".join([time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + '\n ' + word  for word, time in zip(self.current_words, self.current_word_timestamps)])
         post = post + '\n'
         ingestion_url =  self.captions_url + "&seq=" + str(self.seq)
         resp = requests.post(url=ingestion_url, data=post.encode('utf-8'), headers=headers)
@@ -209,8 +193,8 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
         self.current_word_timestamps = []
 
     def _send_word(self, word):
-        self.current_words.append(word)        
-        self.current_word_timestamps.append(datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3])
+        self.current_words.append(word["word"])        
+        self.current_word_timestamps.append(self.segment_start_time + timedelta(seconds=word["start"]))
         text = " ".join(self.current_words)
         if len(text) > self.min_num_chars:
             self._do_send()
@@ -222,16 +206,15 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
 
 class FabLiveWordByWordPresenter(AbstractWordByWordPresenter):
     def __init__(self, fab_speech_iterface_url):
-
         super().__init__()        
         self.fab_speech_iterface_url = fab_speech_iterface_url
-        
     
     def _send_word(self, word):
         logging.info("Sending captions to FAB")
+        text = word["word"]
         if self.num_sent_words > 0:
-            word = " " + word
-        resp = requests.get(url=self.fab_speech_iterface_url, params={"text": word})
+            text = " " + text
+        resp = requests.get(url=self.fab_speech_iterface_url, params={"text": text})
         logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
         
     

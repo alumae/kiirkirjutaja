@@ -18,8 +18,9 @@ from unk_decoder import UnkDecoder
 from compound import CompoundReconstructor
 from words2numbers import Words2Numbers
 from punctuate import Punctuate
-#from confidence import confidence_filter
+from confidence import confidence_filter
 from presenters import *
+import utils
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 ray.init(num_cpus=4) 
@@ -32,16 +33,21 @@ compound_reconstructor = CompoundReconstructor()
 remote_words2numbers = RemoteWords2Numbers.remote()
 remote_punctuate = RemotePunctuate.remote("models/punctuator/checkpoints/best.ckpt", "models/punctuator/tokenizer.json")
 
+
 def process_result(result):
-    result = unk_decoder.post_process(result)
+    result = unk_decoder.post_process(result)    
     text = ""
     if "result" in result:
         text = " ".join([wi["word"] for wi in result["result"]])
-    
-    text = compound_reconstructor.post_process(text)
-    text = ray.get(remote_words2numbers.post_process.remote(text))
-    text = ray.get(remote_punctuate.post_process.remote(text))   
-    return text
+
+        text = compound_reconstructor.post_process(text)
+        text = ray.get(remote_words2numbers.post_process.remote(text))
+        text = ray.get(remote_punctuate.post_process.remote(text))           
+        result = utils.reconstruct_full_result(result, text)
+        result = confidence_filter(result)
+        return result
+    else:
+        return result
 
 def main(args):
     
@@ -74,11 +80,13 @@ def main(args):
             turn_decoder = TurnDecoder(vosk_model, turn.chunks())            
             for res in turn_decoder.decode_results():
                 #logging.info("Result: " + str(res))
-                text = process_result(res)
-                if res["final"]:
-                    presenter.final_result(text)
-                else:
-                    presenter.partial_result(text)
+                if "result" in res:
+                    processed_res = process_result(res)
+                    
+                    if res["final"]:
+                        presenter.final_result(processed_res["result"])
+                    else:
+                        presenter.partial_result(processed_res["result"])
         presenter.segment_end()
         
 
