@@ -18,6 +18,10 @@ It consists of the following components:
   * Puncutator, LSTM-based (https://github.com/alumae/streaming-punctuator)
   * Words-to-numbers converter (FST-based, using Pynini)
 
+## Demo
+
+Aktuaalne kaamera (Estonian TV news show) with automatically generated subtitles: https://www.youtube.com/watch?v=-xTiEsJ6ajQ
+
 ## Hardware requirements
 
   - Around 16 GB memory should be enough (probably you can do with less)
