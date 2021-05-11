@@ -122,6 +122,10 @@ At the same time, start Kiirkirjutaja, using the following arguments (i.e., it s
 
     docker exec -it kiirkirjutaja python main.py --youtube-caption-url <YOUR-CAPTIONS-INGESTION-URL> rtmp://your-source-video
 
+*Disclaimer*: currently the YouTube captions do not work very well. Youtube displays them very sporadically (i.e., some words are never displayed,
+some are displayed only for a very short time, etc). It also varies a lot between runs. Probably there is something wrong with our implementation
+but it's hard to say since the Youtube live captions API is not very well documented.
+
 
 ### Generating captions for FAB Live
 
