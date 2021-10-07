@@ -12,6 +12,7 @@ setattr(argparse_utils, "_gpus_arg_default", lambda x: 0)
 from vad import SpeechSegmentGenerator
 from turn import TurnGenerator
 from asr import TurnDecoder
+from lid import LanguageFilter
 from online_scd.model import SCDModel
 import vosk
 from unk_decoder import UnkDecoder
@@ -64,6 +65,7 @@ def main(args):
     vosk_model = vosk.Model("models/asr_model")
 
     speech_segment_generator = SpeechSegmentGenerator(args.input_file)
+    language_filter = LanguageFilter()
     for speech_segment in speech_segment_generator.speech_segments():
         #print("New segment")
         presenter.segment_start()
@@ -77,7 +79,7 @@ def main(args):
                 presenter.new_turn()
             turn_start_time = (speech_segment.start_sample + turn.start_sample) / 16000
             
-            turn_decoder = TurnDecoder(vosk_model, turn.chunks())            
+            turn_decoder = TurnDecoder(vosk_model, language_filter.filter(turn.chunks()))            
             for res in turn_decoder.decode_results():
                 #logging.info("Result: " + str(res))
                 if "result" in res:
