@@ -5,7 +5,7 @@ import numpy as np
 import json
 
 class LanguageFilter():
-    def __init__(self, target_language="et", prior=0.99, alternative_targets=[]):
+    def __init__(self, target_language="et", prior=0.80, alternative_targets=[]):
         self.target_language = target_language
         self.model = torch.jit.load("models/lang_classifier_95/lang_classifier_95.jit")
         lang_dict = json.load(open("models/lang_classifier_95/lang_dict_95.json"))
@@ -21,17 +21,17 @@ class LanguageFilter():
         return softm
 
     def get_language(self, buffer):
-        logging.debug("Doing LID")
+        logging.info("Doing LID")
         probs = self.get_language_probs(buffer)
-        logging.debug(f"Original prob for languge {self.target_language}: {probs[self.target_language_id]:.2f}")
+        logging.info(f"Original prob for languge {self.target_language}: {probs[self.target_language_id]:.2f}")
         priors0 = torch.ones(len(probs)) / len(probs)
-        true_priors = torch.ones(len(probs)) * 1 - self.target_prior
+        true_priors = (torch.ones(len(probs)) - self.target_prior) / (len(probs) - 1)
         true_priors[self.target_language_id] = self.target_prior
         numerator = true_priors/priors0 * probs
         corrected_probs = numerator / numerator.sum()
-        logging.debug(f"Corrected prob for languge {self.target_language}: {corrected_probs[self.target_language_id]:.2f}")
+        logging.info(f"Corrected prob for languge {self.target_language}: {corrected_probs[self.target_language_id]:.2f}")
         language_id = corrected_probs.argmax()
-        logging.debug(f"Detected language: {self.languages[language_id]}: {corrected_probs[language_id]:.2f}")
+        logging.info(f"Detected language: {self.languages[language_id]}: {corrected_probs[language_id]:.2f}")
         return language_id
 
 
