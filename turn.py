@@ -8,7 +8,7 @@ import logging
 
 class TurnGenerator:
     def __init__(self, model, chunk_generator):
-        self.threshold = 0.5
+        self.threshold = 0.3
         self.chunk_generator = chunk_generator
         self.model = model
         self.model.eval()

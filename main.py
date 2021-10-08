@@ -60,6 +60,7 @@ def main(args):
         presenter = ZoomPresenter(captions_url=args.zoom_caption_url)
     else:
         presenter = WordByWordPresenter(args.word_output_file)
+        #presenter = TerminalPresenter()
     
     scd_model = SCDModel.load_from_checkpoint("models/online-speaker-change-detector/checkpoints/epoch=102.ckpt")
     vosk_model = vosk.Model("models/asr_model")

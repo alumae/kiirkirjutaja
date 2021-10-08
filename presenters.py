@@ -60,7 +60,7 @@ class SubtitlePresenter(ResultPresenter):
         is_sentence_start = False
         if len(self.last_utt_lines) > 0 and len(self.last_utt_lines[-1]) > 0 and self.last_utt_lines[-1][-1] in list("!?."):
             is_sentence_start = True
-        text = prettify(text, is_sentence_start)
+        text = " ".join([w["word"] for word in prettify(text, is_sentence_start)])
         lines = self.last_utt_lines + textwrap.wrap(text, width=self.max_chars)
         if len(lines) == 0:
             return
@@ -168,11 +168,14 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
         self.captions_url = captions_url
         self.seq = 1
         self.current_words = []
-        self.min_num_chars = 62
+        self.min_num_chars = 100
         self.current_word_timestamps = []
 
     def segment_start(self):
-        self.segment_start_time = datetime.utcnow()
+        self.turn_start_time = datetime.utcnow()
+
+    def new_turn(self):
+        self.turn_start_time = datetime.utcnow()
 
     def _do_send(self):
         if len(self.current_words) == 0:
@@ -194,7 +197,7 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
 
     def _send_word(self, word):
         self.current_words.append(word["word"])        
-        self.current_word_timestamps.append(self.segment_start_time + timedelta(seconds=word["start"]))
+        self.current_word_timestamps.append(self.turn_start_time + timedelta(seconds=word["start"]))
         text = " ".join(self.current_words)
         if len(text) > self.min_num_chars:
             self._do_send()
