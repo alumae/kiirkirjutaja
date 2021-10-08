@@ -5,7 +5,7 @@ import numpy as np
 import json
 
 class LanguageFilter():
-    def __init__(self, target_language="et", prior=0.99, alternative_targets=["fi"]):
+    def __init__(self, target_language="et", prior=0.99, alternative_targets=[]):
         self.target_language = target_language
         self.model = torch.jit.load("models/lang_classifier_95/lang_classifier_95.jit")
         lang_dict = json.load(open("models/lang_classifier_95/lang_dict_95.json"))
