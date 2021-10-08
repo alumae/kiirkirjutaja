@@ -87,7 +87,7 @@ RUN git clone https://github.com/alumae/online_speaker_change_detector.git /opt/
 
 RUN git clone https://github.com/alumae/et-g2p-fst.git /opt/et-g2p-fst
 
-RUN echo '2021-10-08_12:56' >/dev/null \
+RUN echo '2021-10-08_13:16' >/dev/null \
     && git clone https://github.com/alumae/kiirkirjutaja.git /opt/kiirkirjutaja \
     && cd /opt/kiirkirjutaja && ln -s ../models
 

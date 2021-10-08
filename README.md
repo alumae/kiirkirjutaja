@@ -18,6 +18,14 @@ It consists of the following components:
   * Puncutator, LSTM-based (https://github.com/alumae/streaming-punctuator)
   * Words-to-numbers converter (FST-based, using Pynini)
 
+## News
+
+  * 2020-10-08: integrated language identification module that filters out speech that is not in the target language.
+  The filtering works so: each new turn is buffered until 3 seconds of audio is received, at which point language ID
+  is performed. If the language is the target language, the buffer is forwarded to the ASR module and all the rest of the chunks
+  are sent to the ASR as usual. The prior probability of the target language can be tuned (usually we expect most of 
+  the data to be in the target language).
+
 ## Demo
 
 Aktuaalne kaamera (Estonian TV news show) with automatically generated subtitles: https://www.youtube.com/watch?v=-xTiEsJ6ajQ
