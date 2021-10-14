@@ -54,9 +54,11 @@ class LanguageFilter():
             else:
                 yield chunk
         if buffering:
-            language_id = self.get_language(buffer)
-            if language_id == self.target_language_id:
-                yield buffer    
+            if len(buffer) > 0:
+                language_id = self.get_language(buffer)
+                if language_id == self.target_language_id:
+                    yield buffer    
+                
 
 
 
