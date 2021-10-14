@@ -28,7 +28,8 @@ It consists of the following components:
 
 ## Demo
 
-Aktuaalne kaamera (Estonian TV news show) with automatically generated subtitles: https://www.youtube.com/watch?v=-xTiEsJ6ajQ
+Government press conference with live subtitles, generated using the YouTube presenter (see below):
+https://www.youtube.com/watch?v=ZN03kzEo-V8
 
 ## Hardware requirements
 
