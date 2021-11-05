@@ -4,6 +4,8 @@ import logging
 import numpy as np
 import json
 
+
+
 class LanguageFilter():
     def __init__(self, target_language="et", prior=0.80, alternative_targets=[]):
         self.target_language = target_language
@@ -34,25 +36,29 @@ class LanguageFilter():
         logging.info(f"Detected language: {self.languages[language_id]}: {corrected_probs[language_id]:.2f}")
         return language_id
 
-
     def filter(self, chunk_generator):
         buffer = torch.tensor([])
         buffering = True
-        for chunk in chunk_generator:
-            if buffering:               
-                buffer = torch.cat([buffer, chunk])
-                if (len(buffer) > self.lid_min_seconds * 16000):
-                    buffering = False
-                    language_id = self.get_language(buffer)
-                    if language_id == self.target_language_id or language_id in self.alternative_language_ids:
-                        yield buffer    
-                        buffer = None
-                    else:
-                        logging.debug("Consuming non-target language speech turn...")
-                        for chunk in chunk_generator:
-                            pass
-            else:
-                yield chunk
+        while True:
+            try:
+                chunk = next(chunk_generator)
+                if buffering:               
+                    buffer = torch.cat([buffer, chunk])
+                    #del chunk
+                    if (len(buffer) > self.lid_min_seconds * 16000):
+                        buffering = False
+                        language_id = self.get_language(buffer)
+                        if language_id == self.target_language_id or language_id in self.alternative_language_ids:
+                            yield buffer    
+                            buffer = None
+                        else:
+                            logging.debug("Consuming non-target language speech turn...")
+                            while True:
+                                chunk = next(chunk_generator)                            
+                else:
+                    yield chunk
+            except StopIteration:
+                break
         if buffering:
             if len(buffer) > 0:
                 language_id = self.get_language(buffer)
