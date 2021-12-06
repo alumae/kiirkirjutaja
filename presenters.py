@@ -187,7 +187,7 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
     
         post = "\n".join([time.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + '\n ' + word  for word, time in zip(self.current_words, self.current_word_timestamps)])
         post = post + '\n'
-        ingestion_url =  self.captions_url + "&seq=" + str(self.seq)
+        ingestion_url =  self.captions_url + "&lang=et-EE&seq=" + str(self.seq)
         resp = requests.post(url=ingestion_url, data=post.encode('utf-8'), headers=headers)
         logging.info(f"Sent body: {post}")
         logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")

@@ -67,6 +67,7 @@ def main(args):
 
     speech_segment_generator = SpeechSegmentGenerator(args.input_file)
     language_filter = LanguageFilter()
+
     for speech_segment in speech_segment_generator.speech_segments():
         #print("New segment")
         presenter.segment_start()
@@ -91,6 +92,7 @@ def main(args):
                     else:
                         presenter.partial_result(processed_res["result"])
         presenter.segment_end()
+        
         
 
 if __name__ == '__main__':

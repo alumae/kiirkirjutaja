@@ -4,10 +4,8 @@ import logging
 import numpy as np
 import json
 
-
-
 class LanguageFilter():
-    def __init__(self, target_language="et", prior=0.80, alternative_targets=[]):
+    def __init__(self, target_language="et", prior=0.50, alternative_targets=[]):
         self.target_language = target_language
         self.model = torch.jit.load("models/lang_classifier_95/lang_classifier_95.jit")
         lang_dict = json.load(open("models/lang_classifier_95/lang_dict_95.json"))
@@ -16,6 +14,7 @@ class LanguageFilter():
         self.alternative_language_ids = [idx for idx, element in enumerate(self.languages) if element[:2] in alternative_targets]
         self.target_prior = prior
         self.lid_min_seconds = 3.0
+        self.lid_min_seconds_2 = 5.0
 
     def get_language_probs(self, buffer):
         lang_logits, lang_group_logits = self.model(buffer.unsqueeze(0))
@@ -39,20 +38,30 @@ class LanguageFilter():
     def filter(self, chunk_generator):
         buffer = torch.tensor([])
         buffering = True
+        did_1st_check = False
         while True:
             try:
                 chunk = next(chunk_generator)
-                if buffering:               
+                if buffering:                                   
                     buffer = torch.cat([buffer, chunk])
-                    #del chunk
-                    if (len(buffer) > self.lid_min_seconds * 16000):
+                    if (len(buffer) > self.lid_min_seconds * 16000) and not did_1st_check:
+                        language_id = self.get_language(buffer)
+                        did_1st_check = True
+                        if language_id == self.target_language_id or language_id in self.alternative_language_ids:
+                            yield buffer    
+                            buffer = None
+                            buffering = False
+                        else:
+                            logging.info("Non-target language chunk? Waiting for more data to confirm...")
+
+                    elif (len(buffer) > self.lid_min_seconds_2 * 16000):
                         buffering = False
                         language_id = self.get_language(buffer)
                         if language_id == self.target_language_id or language_id in self.alternative_language_ids:
                             yield buffer    
                             buffer = None
                         else:
-                            logging.debug("Consuming non-target language speech turn...")
+                            logging.info("Consuming non-target language speech turn...")
                             while True:
                                 chunk = next(chunk_generator)                            
                 else:
