@@ -20,7 +20,11 @@ It consists of the following components:
 
 ## News
 
-  * 2020-10-08: integrated language identification module that filters out speech that is not in the target language.
+  * 2021-12-06: language ID check is done after 3 seconds of speech; if a non-target language is detected,
+  another check is done after 5 seconds (new). This is to filter out false negatives when an utterance starts with 
+  some hesitation sounds or otherwise non-standard words that sometimes confuse the language ID module.
+
+  * 2021-10-08: integrated language identification module that filters out speech that is not in the target language.
   The filtering works so: each new turn is buffered until 3 seconds of audio is received, at which point language ID
   is performed. If the language is the target language, the buffer is forwarded to the ASR module and all the rest of the chunks
   are sent to the ASR as usual. The prior probability of the target language can be tuned (usually we expect most of 
