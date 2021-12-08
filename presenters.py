@@ -208,19 +208,39 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
 
 
 class FabLiveWordByWordPresenter(AbstractWordByWordPresenter):
-    def __init__(self, fab_speech_iterface_url):
+    def __init__(self, fab_speech_interface_url):
         super().__init__()        
-        self.fab_speech_iterface_url = fab_speech_iterface_url
+        self.fab_speech_interface_url = fab_speech_interface_url
     
     def _send_word(self, word):
         logging.info("Sending captions to FAB")
         text = word["word"]
         if self.num_sent_words > 0:
             text = " " + text
-        resp = requests.get(url=self.fab_speech_iterface_url, params={"text": text})
+        resp = requests.get(url=self.fab_speech_interface_url, params={"text": text})
         logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
         
     
+    def _send_final(self):
+        pass
+        #self._send_word("{SEND}")
+
+
+class FabBcastWordByWordPresenter(AbstractWordByWordPresenter):
+    def __init__(self, fab_bcast_url):
+        super().__init__()        
+        self.fab_bcast_url = fab_bcast_url
+        resp = requests.get(url=f"{self.fab_bcast_url}/start")
+        logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
+
+    def _send_word(self, word):
+        logging.info("Sending captions to  FAB Subtitler BCAST")
+        text = word["word"]
+        if self.num_sent_words > 0:
+            text = " " + text
+        resp = requests.get(url=f"{self.fab_bcast_url}/send", params={"text": text})
+        logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
+         
     def _send_final(self):
         pass
         #self._send_word("{SEND}")

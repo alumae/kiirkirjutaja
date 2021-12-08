@@ -56,6 +56,8 @@ def main(args):
         presenter = YoutubeLivePresenter(captions_url=args.youtube_caption_url)
     elif args.fab_speechinterface_url is not None:
         presenter = FabLiveWordByWordPresenter(fab_speech_iterface_url=args.fab_speechinterface_url)
+    elif args.fab_bcast_url is not None:
+        presenter = FabBcastWordByWordPresenter(fab_bcast_url=args.fab_bcast_url)
     elif args.zoom_caption_url is not None:
         presenter = ZoomPresenter(captions_url=args.zoom_caption_url)
     else:
@@ -101,6 +103,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--youtube-caption-url', type=str)
     parser.add_argument('--fab-speechinterface-url', type=str)
+    parser.add_argument('--fab-bcast-url', type=str)
     parser.add_argument('--zoom-caption-url', type=str)
     parser.add_argument('--word-output-file', type=argparse.FileType('w'), default=sys.stdout)
     parser.add_argument('input_file')

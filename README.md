@@ -19,6 +19,7 @@ It consists of the following components:
   * Words-to-numbers converter (FST-based, using Pynini)
 
 ## News
+  * 2021-12-08: implemented presenter for FAB Subtitler BCAST 
 
   * 2021-12-06: language ID check is done after 3 seconds of speech; if a non-target language is detected,
   another check is done after 5 seconds (new). This is to filter out false negatives when an utterance starts with 
