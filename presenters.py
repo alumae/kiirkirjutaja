@@ -24,8 +24,6 @@ class ResultPresenter:
         pass
 
 def prettify(words, is_sentence_start):
-    #words = text.split()
-    #result = ""
     for word in words:
         if is_sentence_start:
             word["word"] = word["word"][0].upper() + word["word"][1:]
@@ -83,6 +81,7 @@ class SubtitlePresenter(ResultPresenter):
 
     def final_result(self, text):
         self._show_result(text, True)
+
         
 
 class TerminalPresenter(SubtitlePresenter):
@@ -117,18 +116,26 @@ class AbstractWordByWordPresenter(ResultPresenter):
         
         if len(words) - self.word_delay > self.num_sent_words:
             for i in range(self.num_sent_words,  len(words) - self.word_delay):
-                self._send_word(words[i])
+                try:
+                    self._send_word(words[i])
+                except Exception:
+                    logging.error("Couldn't send word to output", exc_info=True)
                 self.num_sent_words += 1
 
     def final_result(self, words):
         words = prettify(words, self.is_sentence_start)
-
-        #words = text.split()
-        for i in range(self.num_sent_words,  len(words)):
-            self._send_word(words[i])
-            self.num_sent_words += 1
         
-        self._send_final()
+        for i in range(self.num_sent_words,  len(words)):
+            try:
+                self._send_word(words[i])
+            except Exception:
+                logging.error("Couldn't send word to output", exc_info=True)
+            self.num_sent_words += 1
+        try:
+            self._send_final()
+        except Exception:
+            logging.error("Couldn't send final signal to output", exc_info=True)
+
         self.num_sent_words = 0
         if len(words) > 0 and words[-1]["word"][-1] in list("!?.,"):
             self.is_sentence_start = True
@@ -143,7 +150,11 @@ class AbstractWordByWordPresenter(ResultPresenter):
         pass
 
     def new_turn(self):
-        self._send_word({"word" : "- ", "start": 0.0})
+        try:
+            self._send_word({"word" : "- ", "start": 0.0})
+        except Exception:
+            logging.error("Couldn't send word to output", exc_info=True)
+
 
 
 class WordByWordPresenter(AbstractWordByWordPresenter):
@@ -230,8 +241,11 @@ class FabBcastWordByWordPresenter(AbstractWordByWordPresenter):
     def __init__(self, fab_bcast_url):
         super().__init__()        
         self.fab_bcast_url = fab_bcast_url
-        resp = requests.get(url=f"{self.fab_bcast_url}/start")
-        logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
+        try:
+            resp = requests.get(url=f"{self.fab_bcast_url}/start")
+            logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
+        except Exception:
+            logging.error("Couldn't send start command to BCAST", exc_info=True)
 
     def _send_word(self, word):
         logging.info("Sending captions to  FAB Subtitler BCAST")
@@ -243,7 +257,6 @@ class FabBcastWordByWordPresenter(AbstractWordByWordPresenter):
          
     def _send_final(self):
         pass
-        #self._send_word("{SEND}")
 
 
 class ZoomPresenter(AbstractWordByWordPresenter):

@@ -1,9 +1,13 @@
 import sys
 import argparse
 import logging
+message_format = "%(asctime)s - %(levelname)s - %(message)s"
+logging.basicConfig(format=message_format, stream=sys.stderr, level=logging.INFO)
+
 import argparse
 import re
 import ray
+import torch
 
 # Needed for loading the speaker change detection model
 from pytorch_lightning.utilities import argparse_utils
@@ -22,8 +26,11 @@ from punctuate import Punctuate
 from confidence import confidence_filter
 from presenters import *
 import utils
+import gc
+import tracemalloc
+#date_strftime_format = "%y-%b-%d %H:%M:%S"
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+
 ray.init(num_cpus=4) 
 
 RemotePunctuate = ray.remote(Punctuate)
@@ -68,34 +75,35 @@ def main(args):
     vosk_model = vosk.Model("models/asr_model")
 
     speech_segment_generator = SpeechSegmentGenerator(args.input_file)
-    language_filter = LanguageFilter()
+    language_filter = LanguageFilter()        
+    
+    def main_loop():
+        tracemalloc.start()
+        snapshot1 = tracemalloc.take_snapshot()
+        for speech_segment in speech_segment_generator.speech_segments():
+            presenter.segment_start()
 
-    for speech_segment in speech_segment_generator.speech_segments():
-        #print("New segment")
-        presenter.segment_start()
+            speech_segment_start_time = speech_segment.start_sample / 16000
 
-        speech_segment_start_time = speech_segment.start_sample / 16000
+            turn_generator = TurnGenerator(scd_model, speech_segment)        
+            for i, turn in enumerate(turn_generator.turns()):
+                if i > 0:
+                    presenter.new_turn()
+                turn_start_time = (speech_segment.start_sample + turn.start_sample) / 16000
+                
+                turn_decoder = TurnDecoder(vosk_model, language_filter.filter(turn.chunks()))            
+                for res in turn_decoder.decode_results():
+                    if "result" in res:
+                        processed_res = process_result(res)
+                        
+                        if res["final"]:
+                            presenter.final_result(processed_res["result"])
+                        else:
+                            presenter.partial_result(processed_res["result"])
+            presenter.segment_end()   
+            gc.collect()   
 
-        turn_generator = TurnGenerator(scd_model, speech_segment)        
-        for i, turn in enumerate(turn_generator.turns()):
-            #print("New turn")
-            if i > 0:
-                presenter.new_turn()
-            turn_start_time = (speech_segment.start_sample + turn.start_sample) / 16000
-            
-            turn_decoder = TurnDecoder(vosk_model, language_filter.filter(turn.chunks()))            
-            for res in turn_decoder.decode_results():
-                #logging.info("Result: " + str(res))
-                if "result" in res:
-                    processed_res = process_result(res)
-                    
-                    if res["final"]:
-                        presenter.final_result(processed_res["result"])
-                    else:
-                        presenter.partial_result(processed_res["result"])
-        presenter.segment_end()
-        
-        
+    main_loop()        
 
 if __name__ == '__main__':
     

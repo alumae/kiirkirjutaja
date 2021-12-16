@@ -160,6 +160,7 @@ class SpeechSegmentGenerator:
                 vad_outs = ray.get(self.model_wrapper.forward.remote(batch))
 
             change_points = self.vad_iter.state(vad_outs)
+            
 
             for j in range(len(vad_outs)):                
                 current_frame = sample_pos + j * self.vad_iter.step
@@ -177,9 +178,9 @@ class SpeechSegmentGenerator:
                         chunk_queue = None
                 elif chunk_queue is not None:
                     chunk_queue.put(chunk[j * self.vad_iter.step : (j+1) * self.vad_iter.step])
-                speech_rewind_buffer.append(chunk[j * self.vad_iter.step : (j+1) * self.vad_iter.step])
+                speech_rewind_buffer.append(chunk[j * self.vad_iter.step : (j+1) * self.vad_iter.step])                
             sample_pos += self.num_samples_per_window
-
+            del vad_outs
         if chunk_queue is not None:
             chunk_queue.put(None)
         self.speech_segment_queue.put(None)                                                    

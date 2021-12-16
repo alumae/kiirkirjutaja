@@ -1,6 +1,7 @@
 
 from streaming_punctuator.model import StreamingPunctuatorModel
 import logging
+import torch
 
 class Punctuate():
 
@@ -9,4 +10,5 @@ class Punctuate():
       self.model.eval()
 
     def post_process(self, text):
-      return self.model.process_line(text)
+      with torch.no_grad():
+        return self.model.process_line(text)
