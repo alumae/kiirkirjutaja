@@ -19,6 +19,9 @@ It consists of the following components:
   * Words-to-numbers converter (FST-based, using Pynini)
 
 ## News
+  * 2021-11-16: fixed a memory leak, increased robustness against cases when the network API endpoint that receives
+  subtitles is down
+
   * 2021-12-08: implemented presenter for FAB Subtitler BCAST 
 
   * 2021-12-06: language ID check is done after 3 seconds of speech; if a non-target language is detected,
