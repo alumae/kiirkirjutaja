@@ -81,6 +81,8 @@ RUN pip install pytorch-lightning==1.2.5 'ray[default]' torchmetrics==0.2.0 \
 
 COPY ./models /opt/models
 
+RUN echo '2022-01-31_16:24' >/dev/null
+
 RUN git clone https://github.com/alumae/streaming-punctuator /opt/streaming-punctuator
 
 RUN git clone https://github.com/alumae/online_speaker_change_detector.git /opt/online-speaker-change-detector

@@ -78,8 +78,6 @@ def main(args):
     language_filter = LanguageFilter()        
     
     def main_loop():
-        tracemalloc.start()
-        snapshot1 = tracemalloc.take_snapshot()
         for speech_segment in speech_segment_generator.speech_segments():
             presenter.segment_start()
 
