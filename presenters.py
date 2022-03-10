@@ -241,11 +241,6 @@ class FabBcastWordByWordPresenter(AbstractWordByWordPresenter):
     def __init__(self, fab_bcast_url):
         super().__init__()        
         self.fab_bcast_url = fab_bcast_url
-        try:
-            resp = requests.get(url=f"{self.fab_bcast_url}/start")
-            logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
-        except Exception:
-            logging.error("Couldn't send start command to BCAST", exc_info=True)
 
     def _send_word(self, word):
         logging.info("Sending captions to  FAB Subtitler BCAST")
