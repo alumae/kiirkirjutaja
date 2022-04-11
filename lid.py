@@ -22,17 +22,17 @@ class LanguageFilter():
         return softm
 
     def get_language(self, buffer):
-        logging.info("Doing LID")
+        logging.debug("Doing LID")
         probs = self.get_language_probs(buffer)
-        logging.info(f"Original prob for languge {self.target_language}: {probs[self.target_language_id]:.2f}")
+        logging.debug(f"Original prob for languge {self.target_language}: {probs[self.target_language_id]:.2f}")
         priors0 = torch.ones(len(probs), requires_grad=False) / len(probs)
         true_priors = (torch.ones(len(probs), requires_grad=False) - self.target_prior) / (len(probs) - 1)
         true_priors[self.target_language_id] = self.target_prior
         numerator = true_priors/priors0 * probs
         corrected_probs = numerator / numerator.sum()
-        logging.info(f"Corrected prob for languge {self.target_language}: {corrected_probs[self.target_language_id]:.2f}")
+        logging.debug(f"Corrected prob for languge {self.target_language}: {corrected_probs[self.target_language_id]:.2f}")
         language_id = corrected_probs.argmax()
-        logging.info(f"Detected language: {self.languages[language_id]}: {corrected_probs[language_id]:.2f}")
+        logging.debug(f"Detected language: {self.languages[language_id]}: {corrected_probs[language_id]:.2f}")
         return language_id
 
     def filter(self, chunk_generator):
