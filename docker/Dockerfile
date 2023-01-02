@@ -76,7 +76,7 @@ RUN conda install pytorch=1.10.0 torchvision torchaudio=0.10.0 cpuonly -c pytorc
 
 RUN pip install pytorch-lightning==1.2.5 'ray[default]' torchmetrics==0.2.0 \
     tokenizers pytorch-nlp py-term matplotlib scipy \
-    librosa==0.8.0 lxml audiomentations pytest
+    librosa==0.8.0 lxml audiomentations pytest event-scheduler
 
 COPY ./models /opt/models
 

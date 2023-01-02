@@ -5,6 +5,9 @@ import logging
 import sys
 import re
 import term
+import time
+
+from event_scheduler import EventScheduler
 
 class ResultPresenter:
 
@@ -15,13 +18,17 @@ class ResultPresenter:
         pass
 
     def segment_start(self):
-        pass
+        #logging.info("New segment")        
+        self.turn_start_time = datetime.utcnow()
 
     def segment_end(self):
         pass
 
     def new_turn(self):
-        pass
+        #logging.info("New turn")
+        self.turn_start_time = datetime.utcnow()
+        
+
 
 def prettify(words, is_sentence_start):
     for word in words:
@@ -98,17 +105,23 @@ class TerminalPresenter(SubtitlePresenter):
 
 class AbstractWordByWordPresenter(ResultPresenter):
 
-    def __init__(self):
+    def __init__(self, word_delay_secs=3.0):
         self.word_delay = 3
+        self.word_delay_secs = word_delay_secs
         self.current_words = []
         self.num_sent_words = 0
         self.is_sentence_start = True
-        
+        self.event_scheduler = EventScheduler()
+        self.event_scheduler.start()
 
-    def _send_word(self, word):
-        pass
+
+    def _send_word(self, word, is_final):
+        #logging.info(f'{self.turn_start_time.timestamp()} --- {word["start"]} --- {word["word"]}')
+        word_output_time = self.turn_start_time.timestamp() + word["start"] + self.word_delay_secs
+        #logging.info(f"Difference beteen current time and word output time: {word_output_time - datetime.utcnow().timestamp()}" )
+        self.event_scheduler.enter(word_output_time - datetime.utcnow().timestamp(), priority=1, action=self._send_word_impl, arguments=(word, self.num_sent_words, self.turn_start_time, is_final))        
     
-    def _send_final(self):
+    def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
         pass
 
     def partial_result(self, words):
@@ -117,7 +130,7 @@ class AbstractWordByWordPresenter(ResultPresenter):
         if len(words) - self.word_delay > self.num_sent_words:
             for i in range(self.num_sent_words,  len(words) - self.word_delay):
                 try:
-                    self._send_word(words[i])
+                    self._send_word(words[i], False)
                 except Exception:
                     logging.error("Couldn't send word to output", exc_info=True)
                 self.num_sent_words += 1
@@ -127,14 +140,10 @@ class AbstractWordByWordPresenter(ResultPresenter):
         
         for i in range(self.num_sent_words,  len(words)):
             try:
-                self._send_word(words[i])
+                self._send_word(words[i], i==len(words)-1)
             except Exception:
                 logging.error("Couldn't send word to output", exc_info=True)
             self.num_sent_words += 1
-        try:
-            self._send_final()
-        except Exception:
-            logging.error("Couldn't send final signal to output", exc_info=True)
 
         self.num_sent_words = 0
         if len(words) > 0 and words[-1]["word"][-1] in list("!?.,"):
@@ -143,34 +152,29 @@ class AbstractWordByWordPresenter(ResultPresenter):
             self.is_sentence_start = False
 
 
-    def segment_start(self):
-        pass
-
-    def segment_end(self):
-        pass
-
     def new_turn(self):
+        super().new_turn()
         try:
-            self._send_word({"word" : "- ", "start": 0.0})
+            self._send_word({"word" : "- ", "start": 0.0}, False)
         except Exception:
             logging.error("Couldn't send word to output", exc_info=True)
 
 
 
 class WordByWordPresenter(AbstractWordByWordPresenter):
-    def __init__(self, output_file):
-        super().__init__()        
+    def __init__(self, output_file, word_delay_secs=3.0):
+        super().__init__(word_delay_secs)        
         self.output_file = output_file
+        
 
-    def _send_word(self, word):
-        if self.num_sent_words > 0 and word["word"][0] not in list(".!?"):
+    def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
+        if num_sent_words > 0 and word["word"][0] not in list(".!?"):
             print(" ", end="", file=self.output_file)
         print(word["word"], end="", file=self.output_file)
+        if is_final:
+            print("", file=self.output_file)
         self.output_file.flush()
     
-    def _send_final(self):
-        print("", file=self.output_file)
-        self.output_file.flush()
 
 
 class YoutubeLivePresenter(AbstractWordByWordPresenter):
@@ -181,12 +185,7 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
         self.current_words = []
         self.min_num_chars = 100
         self.current_word_timestamps = []
-
-    def segment_start(self):
-        self.turn_start_time = datetime.utcnow()
-
-    def new_turn(self):
-        self.turn_start_time = datetime.utcnow()
+       
 
     def _do_send(self):
         if len(self.current_words) == 0:
@@ -206,15 +205,12 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
         self.current_words = []
         self.current_word_timestamps = []
 
-    def _send_word(self, word):
+    def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
         self.current_words.append(word["word"])        
-        self.current_word_timestamps.append(self.turn_start_time + timedelta(seconds=word["start"]))
+        self.current_word_timestamps.append(turn_start_time + timedelta(seconds=word["start"]))
         text = " ".join(self.current_words)
-        if len(text) > self.min_num_chars:
+        if len(text) > self.min_num_chars or is_final:
             self._do_send()
-
-    def _send_final(self):        
-        self._do_send()
 
 
 
@@ -223,18 +219,15 @@ class FabLiveWordByWordPresenter(AbstractWordByWordPresenter):
         super().__init__()        
         self.fab_speech_interface_url = fab_speech_interface_url
     
-    def _send_word(self, word):
+    def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
         logging.info("Sending captions to FAB")
         text = word["word"]
-        if self.num_sent_words > 0:
+        if num_sent_words > 0:
             text = " " + text
         resp = requests.get(url=self.fab_speech_interface_url, params={"text": text})
         logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
         
     
-    def _send_final(self):
-        pass
-        #self._send_word("{SEND}")
 
 
 class FabBcastWordByWordPresenter(AbstractWordByWordPresenter):
@@ -242,16 +235,14 @@ class FabBcastWordByWordPresenter(AbstractWordByWordPresenter):
         super().__init__()        
         self.fab_bcast_url = fab_bcast_url
 
-    def _send_word(self, word):
+    def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
         logging.info("Sending captions to  FAB Subtitler BCAST")
         text = word["word"]
-        if self.num_sent_words > 0:
+        if num_sent_words > 0:
             text = " " + text
         resp = requests.get(url=f"{self.fab_bcast_url}/send", params={"text": text})
         logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
          
-    def _send_final(self):
-        pass
 
 
 class ZoomPresenter(AbstractWordByWordPresenter):
@@ -274,14 +265,9 @@ class ZoomPresenter(AbstractWordByWordPresenter):
         logging.info(f"Response status {resp.status_code} {resp.reason}: {resp.text}")
         self.seq += 1
 
-    def _send_word(self, word):
+    def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
         self.current_words.append(word)
         text = " ".join(self.current_words)
-        if len(text) > self.min_num_chars:
+        if len(text) > self.min_num_chars or is_final:
             self._do_send(text)
             self.current_words = []
-
-    def _send_final(self):        
-        text = " ".join(self.current_words)
-        self._do_send(text)
-        self.current_words = []

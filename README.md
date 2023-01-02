@@ -19,6 +19,12 @@ It consists of the following components:
   * Words-to-numbers converter (FST-based, using Pynini)
 
 ## News
+  * 2023-01-01: Fixed a bug in Youtube presenter that caused timings to be sometimes messed up. Also introduced
+  a new command line argument `--word-output-delay <seconds>' that can be used to set a minimum time between a word
+  occurring in speech and word appearing in subtitles. Recommended value is smth like 5. This makes word-by-word output
+  timing more consistent and makes reading more comfortable. 
+  Otherwise, words in utterance ends can be displayed all very 'abruptly'.
+
   * 2021-11-16: fixed a memory leak, increased robustness against cases when the network API endpoint that receives
   subtitles is down
 

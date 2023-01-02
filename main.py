@@ -4,6 +4,7 @@ import logging
 message_format = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(format=message_format, stream=sys.stderr, level=logging.INFO)
 
+import time
 import argparse
 import re
 import ray
@@ -68,7 +69,7 @@ def main(args):
     elif args.zoom_caption_url is not None:
         presenter = ZoomPresenter(captions_url=args.zoom_caption_url)
     else:
-        presenter = WordByWordPresenter(args.word_output_file)
+        presenter = WordByWordPresenter(args.word_output_file, word_delay_secs=args.word_output_delay)
         #presenter = TerminalPresenter()
     
     scd_model = SCDModel.load_from_checkpoint("models/online-speaker-change-detector/checkpoints/epoch=102.ckpt")
@@ -80,14 +81,14 @@ def main(args):
     def main_loop():
         for speech_segment in speech_segment_generator.speech_segments():
             presenter.segment_start()
-
+            
             speech_segment_start_time = speech_segment.start_sample / 16000
 
             turn_generator = TurnGenerator(scd_model, speech_segment)        
             for i, turn in enumerate(turn_generator.turns()):
                 if i > 0:
                     presenter.new_turn()
-                turn_start_time = (speech_segment.start_sample + turn.start_sample) / 16000
+                turn_start_time = (speech_segment.start_sample + turn.start_sample) / 16000                
                 
                 turn_decoder = TurnDecoder(vosk_model, language_filter.filter(turn.chunks()))            
                 for res in turn_decoder.decode_results():
@@ -112,6 +113,7 @@ if __name__ == '__main__':
     parser.add_argument('--fab-bcast-url', type=str)
     parser.add_argument('--zoom-caption-url', type=str)
     parser.add_argument('--word-output-file', type=argparse.FileType('w'), default=sys.stdout)
+    parser.add_argument('--word-output-delay', default=0.0, type=float, help="Words are not outputted before that many seconds have passed since their actual start")
     parser.add_argument('input_file')
 
     args = parser.parse_args()
