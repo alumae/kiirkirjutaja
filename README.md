@@ -62,11 +62,11 @@ Running and using the Docker container (with generic Estonian models) is outline
 
 Pull the Docker image:
 
-    docker pull koodivaramu.eesti.ee:5050/taltechnlp/kiirkirjutaja:latest
+    docker pull alumae/kiirkirjutaja:latest
 
 Start Docker container (use the `--shm-size 2GB` argument because the program uses shared memory between for IPC):
 
-    docker run --shm-size 2GB --name kiirkirjutaja --rm -d -t koodivaramu.eesti.ee:5050/taltechnlp/kiirkirjutaja:latest
+    docker run --shm-size 2GB --name kiirkirjutaja --rm -d -t alumae/kiirkirjutaja:latest
 
 Decode a Vikerraadio real-time stream (it takes 10-20 seconds to load the models, and you'll get some warnings that can be usually ignored):
 
