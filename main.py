@@ -86,7 +86,7 @@ def main(args):
             encoder="models/sherpa/encoder.onnx",
             decoder="models/sherpa/decoder.onnx",
             joiner="models/sherpa/joiner.onnx",
-            num_threads=4,
+            num_threads=2,
             sample_rate=16000,
             feature_dim=80,
             enable_endpoint_detection=True,

@@ -12,13 +12,14 @@ It consists of the following components:
 
   * Speech activity detector (https://github.com/snakers4/silero-vad)
   * Online speaker change detector (https://github.com/alumae/online_speaker_change_detector)
-  * Speech recognition: we use a forked version of Vosk API (https://github.com/alphacep/vosk-api), which is in turn based on Kaldi
-  * Unknown word reconstuctor (words not in the speech recognition vocabulary are reconstructed using a phoneme-to-grapheme tool, which is based on FSTs and an n-gram model -- https://github.com/alumae/et-g2p-fst)
-  * Compound word recognizer: for glueing together compound word tokens, using an n-gram model
-  * Puncutator, LSTM-based (https://github.com/alumae/streaming-punctuator)
-  * Words-to-numbers converter (FST-based, using Pynini)
+  * Speech recognition: we use streaming transducer models trained using [Icefall](https://github.com/k2-fsa/icefall). Speech recognition model
+  includes punctuation insertion. [Sherpa-ONNX](https://github.com/k2-fsa/sherpa-onnx) is used for decoding.
+  
 
 ## News
+  * 2023-03-30: *Major rewrite*: Now uses end-to-end streaming transducer models trained using [Icefall](https://github.com/k2-fsa/icefall).
+  The model includes punctuation restoration. Should provide 30% less ASR errors and much improved punctuation accuracy.
+  Also, the Docker image size reduced to from ~14 GB to 3.2 GB, as we don't need Kaldi any more.
   * 2023-01-01: Fixed a bug in Youtube presenter that caused timings to be sometimes messed up. Also introduced
   a new command line argument `--word-output-delay <seconds>' that can be used to set a minimum time between a word
   occurring in speech and word appearing in subtitles. Recommended value is smth like 5. This makes word-by-word output
