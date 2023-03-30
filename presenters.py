@@ -31,17 +31,19 @@ class ResultPresenter:
 
 
 def prettify(words, is_sentence_start):
+    #return words
+
     for word in words:
         if is_sentence_start:
             word["word"] = word["word"][0].upper() + word["word"][1:]
         is_sentence_start = False
 
-        if word["word"][0] in list("?.!"):
-            word["word"] = word["word"].title()
+        #if word["word"][0] in list("?.!"):
+        #    word["word"] = word["word"].title()
 
-        if re.match(r".* [.!?]$", word["word"]):
+        if word["word"][-1] in ".!?":
             is_sentence_start = True
-        word["word"] = re.sub(r"(.*) ([,.?!])$", r"\1\2", word["word"])
+        #word["word"] = re.sub(r"(.*) ([,.?!])$", r"\1\2", word["word"])
 
     return words
 
@@ -65,7 +67,7 @@ class SubtitlePresenter(ResultPresenter):
         is_sentence_start = False
         if len(self.last_utt_lines) > 0 and len(self.last_utt_lines[-1]) > 0 and self.last_utt_lines[-1][-1] in list("!?."):
             is_sentence_start = True
-        text = " ".join([w["word"] for word in prettify(text, is_sentence_start)])
+        text = " ".join([w["word"] for w in prettify(text, is_sentence_start)])
         lines = self.last_utt_lines + textwrap.wrap(text, width=self.max_chars)
         if len(lines) == 0:
             return
@@ -106,26 +108,31 @@ class TerminalPresenter(SubtitlePresenter):
 class AbstractWordByWordPresenter(ResultPresenter):
 
     def __init__(self, word_delay_secs=3.0):
-        self.word_delay = 3
+        self.word_delay = 2
         self.word_delay_secs = word_delay_secs
         self.current_words = []
         self.num_sent_words = 0
         self.is_sentence_start = True
         self.event_scheduler = EventScheduler()
         self.event_scheduler.start()
+        self.last_word_send_time = 0
 
 
     def _send_word(self, word, is_final):
         #logging.info(f'{self.turn_start_time.timestamp()} --- {word["start"]} --- {word["word"]}')
         word_output_time = self.turn_start_time.timestamp() + word["start"] + self.word_delay_secs
+        if word_output_time < self.last_word_send_time:
+            word_output_time = self.last_word_send_time + 0.1
         #logging.info(f"Difference beteen current time and word output time: {word_output_time - datetime.utcnow().timestamp()}" )
         self.event_scheduler.enter(word_output_time - datetime.utcnow().timestamp(), priority=1, action=self._send_word_impl, arguments=(word, self.num_sent_words, self.turn_start_time, is_final))        
+        self.last_word_send_time = word_output_time
     
     def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
         pass
 
     def partial_result(self, words):
         words = prettify(words, self.is_sentence_start)
+        #print(words)
         
         if len(words) - self.word_delay > self.num_sent_words:
             for i in range(self.num_sent_words,  len(words) - self.word_delay):
@@ -158,7 +165,7 @@ class AbstractWordByWordPresenter(ResultPresenter):
             self._send_word({"word" : "- ", "start": 0.0}, False)
         except Exception:
             logging.error("Couldn't send word to output", exc_info=True)
-
+        self.is_sentence_start = True
 
 
 class WordByWordPresenter(AbstractWordByWordPresenter):
@@ -168,7 +175,7 @@ class WordByWordPresenter(AbstractWordByWordPresenter):
         
 
     def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
-        if num_sent_words > 0 and word["word"][0] not in list(".!?"):
+        if num_sent_words > 0 and word["word"][0] not in list(",.!?"):
             print(" ", end="", file=self.output_file)
         print(word["word"], end="", file=self.output_file)
         if is_final:
@@ -207,7 +214,10 @@ class YoutubeLivePresenter(AbstractWordByWordPresenter):
 
     def _send_word_impl(self, word, num_sent_words, turn_start_time, is_final):
         self.current_words.append(word["word"])        
-        self.current_word_timestamps.append(turn_start_time + timedelta(seconds=word["start"]))
+        word_timestamp = turn_start_time + timedelta(seconds=word["start"])
+        if len(self.current_word_timestamps) > 0 and self.current_word_timestamps[-1] > word_timestamp:
+            word_timestamp = self.current_word_timestamps[-1] + timedelta(seconds=0.1)
+        self.current_word_timestamps.append(word_timestamp)
         text = " ".join(self.current_words)
         if len(text) > self.min_num_chars or is_final:
             self._do_send()
