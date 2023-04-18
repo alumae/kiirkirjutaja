@@ -17,6 +17,8 @@ It consists of the following components:
   
 
 ## News
+  * 2023-04-18: fixed an issue which caused words at sentence ends not to be recognizer correctly in some cases.
+
   * 2023-03-30: *Major rewrite*: Now uses end-to-end streaming transducer models trained using [Icefall](https://github.com/k2-fsa/icefall).
   The model includes punctuation restoration. Should provide 30% less ASR errors and much improved punctuation accuracy.
   Also, the Docker image size reduced to from ~14 GB to 3.2 GB, as we don't need Kaldi any more.
