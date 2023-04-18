@@ -46,6 +46,9 @@ class TurnDecoder():
 
     def run(self):
         buffer = torch.tensor([])
+        tail_padding = torch.rand(
+            int(16000 * 0.3), dtype=torch.float32
+        )
         
         stream = self.recognizer.create_stream()
         last_result = ""
@@ -82,6 +85,8 @@ class TurnDecoder():
         if len(buffer) > 0:
             stream.accept_waveform(16000, buffer.numpy())
             num_samples_consumed += len(buffer)        
+        stream.accept_waveform(16000, tail_padding.numpy())   
+        num_samples_consumed += len(tail_padding)        
         stream.input_finished()        
         while self.recognizer.is_ready(stream):
             self.recognizer.decode_stream(stream)

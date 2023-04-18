@@ -90,8 +90,8 @@ def main(args):
             sample_rate=16000,
             feature_dim=80,
             enable_endpoint_detection=True,
-            rule1_min_trailing_silence=2.4,
-            rule2_min_trailing_silence=1.2,
+            rule1_min_trailing_silence=5.0,
+            rule2_min_trailing_silence=2.0,
             rule3_min_utterance_length=300,  
             decoding_method="modified_beam_search",
             max_feature_vectors=1000,  # 10 seconds

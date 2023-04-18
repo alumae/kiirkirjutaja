@@ -107,8 +107,8 @@ class VadModelWrapper():
 
 class SpeechSegmentGenerator:
     def __init__(self, input_file):
-        trig_sum = 0.26
-        neg_trig_sum = 0.07
+        trig_sum =  0.16
+        neg_trig_sum = 0.01
         self.num_steps = 8
         self.num_samples_per_window = 4000
         self.model_wrapper = VadModelWrapper.remote()
@@ -160,7 +160,6 @@ class SpeechSegmentGenerator:
                 vad_outs = ray.get(self.model_wrapper.forward.remote(batch))
 
             change_points = self.vad_iter.state(vad_outs)
-            
 
             for j in range(len(vad_outs)):                
                 current_frame = sample_pos + j * self.vad_iter.step
