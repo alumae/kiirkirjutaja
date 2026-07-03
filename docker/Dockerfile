@@ -1,10 +1,10 @@
-FROM python:3.9-slim-buster
+FROM python:3.10-slim
 
 RUN pip install torch==1.13.1+cpu torchvision==0.14.1+cpu torchaudio==0.13.1 --extra-index-url https://download.pytorch.org/whl/cpu
 
 RUN pip3 install pytorch-lightning==1.2.5 'ray[default]' torchmetrics==0.2.0 \
-    tokenizers pytorch-nlp py-term matplotlib scipy \
-    librosa==0.8.0 lxml audiomentations pytest event-scheduler \
+    tokenizers==0.13.2 pytorch-nlp py-term matplotlib==3.7.1 scipy==1.10.1 \
+    librosa==0.8.0 numpy==1.23.5 lxml audiomentations pytest event-scheduler \
     onnx sherpa-onnx 
 
 RUN apt-get update && apt-get install  -y --no-install-recommends git ffmpeg

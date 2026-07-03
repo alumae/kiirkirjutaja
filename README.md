@@ -67,13 +67,9 @@ Pull the Docker image:
 
     docker pull alumae/kiirkirjutaja:latest
 
-Start Docker container (use the `--shm-size 2GB` argument because the program uses shared memory between for IPC):
+Decode a Vikerraadio real-time stream (it takes 10-20 seconds to load the models, and you'll get some warnings that can be usually ignored). Use the `--shm-size 2GB` argument because the program uses shared memory between for IPC)
 
-    docker run --shm-size 2GB --name kiirkirjutaja --rm -d -t alumae/kiirkirjutaja:latest
-
-Decode a Vikerraadio real-time stream (it takes 10-20 seconds to load the models, and you'll get some warnings that can be usually ignored):
-
-    docker exec -it kiirkirjutaja python main.py https://icecast.err.ee/vikerraadio.mp3
+    docker run -it --shm-size 2GB --rm alumae/kiirkirjutaja:latest python main.py https://icecast.err.ee/vikerraadio.mp3
 
 By default, Kiirkirjutaja writes recognized words to stdout, word by word. Note that there is a delay 
 in recognition results, around 2-3 seconds, because of two factors:
@@ -89,14 +85,14 @@ in recognition results, around 2-3 seconds, because of two factors:
 You can also write the word-by-word output to a file (can be a named pipe, if you want to process the generated
 subtitles using some external program). E.g.:
 
-    docker exec -it kiirkirjutaja python main.py --word-output-file out.txt https://icecast.err.ee/vikerraadio.mp3
+    docker run --shm-size 2GB -it --rm alumae/kiirkirjutaja:latest  python main.py --word-output-file out.txt https://icecast.err.ee/vikerraadio.mp3
 
 But of course this file will be on the Docker container filesystem.
 
 If you want to pipe the word-by-word output to another program, you can just capture the stdout from the decoding process,
 as all the warning and informatuon messages are written to stderr. For example:
 
-      docker exec -it kiirkirjutaja python main.py https://icecast.err.ee/vikerraadio.mp3 | some_external_program
+      docker run --shm-size 2GB -it --rm alumae/kiirkirjutaja:latest python main.py https://icecast.err.ee/vikerraadio.mp3 | some_external_program
 
 Kiirkirjutaja uses `ffmpeg` to decode the given file/stream and convert it to mono, 16-bit, 16 kHz audio stream. 
 
@@ -104,11 +100,11 @@ If the input stream
 is called "-", it is assumed to be an already decoded mono/16-bit/16kHz raw audio stream. This way you can stream raw audio to it. For example, to stream
 audio directly from the microphone, use something like this:
 
-    rec -t raw -r 16k -e signed -b 16 -c 1 - | docker exec -i kiirkirjutaja python main.py -
+    rec -t raw -r 16k -e signed -b 16 -c 1 - | docker run --shm-size 2GB -it --rm alumae/kiirkirjutaja:latest python main.py -
 
 If the server with Kiirkirjutaja resides on a remote machine, you can stream audio via network using `netcat`. On server:
 
-    nc -l 8022 | docker exec -i kiirkirjutaja python main.py -
+    nc -l 8022 | docker run --shm-size 2GB -it --rm alumae/kiirkirjutaja:latest python main.py -
 
 On desktop:
 
@@ -146,7 +142,7 @@ Now, start streaming video to the YouTube input streaming URL (e.g., from some e
 
 At the same time, start Kiirkirjutaja, using the following arguments (i.e., it should get the same external video stream as input):
 
-    docker exec -it kiirkirjutaja python main.py --youtube-caption-url <YOUR-CAPTIONS-INGESTION-URL> rtmp://your-source-video
+    docker run --shm-size 2GB -it --rm alumae/kiirkirjutaja:latest python main.py --youtube-caption-url <YOUR-CAPTIONS-INGESTION-URL> rtmp://your-source-video
 
 It is recommended to use a 30 second delay setting for YouTube live streams, otherwise the subtitles display somewhat
 sporadically.
@@ -160,7 +156,7 @@ In order to use Kiirkirjutaja with FAB Live, first go to "Options -> Special -> 
 Now set the "Mode" in FAB to "Speech" and start Kiirkirjutaja with the following options (change localhost to the machine where FAB is running,
 and make sure the port is accessible to the machine running Kiirkirjutaja):
 
-    docker exec -it kiirkirjutaja python main.py --fab-speechinterface-url http://localhost:8001/speechinterface rtmp://your-source-video
+    docker run --shm-size 2GB -it --rm alumae/kiirkirjutaja:latest python main.py --fab-speechinterface-url http://localhost:8001/speechinterface rtmp://your-source-video
 
 
 

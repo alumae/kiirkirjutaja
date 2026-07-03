@@ -46,8 +46,8 @@ class TurnDecoder():
 
     def run(self):
         buffer = torch.tensor([])
-        tail_padding = torch.rand(
-            int(16000 * 0.3), dtype=torch.float32
+        tail_padding = torch.zeros(
+            int(16000 * 0.66), dtype=torch.float32
         )
         
         stream = self.recognizer.create_stream()

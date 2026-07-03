@@ -81,7 +81,7 @@ def main(args):
         #presenter = TerminalPresenter()
     
     scd_model = SCDModel.load_from_checkpoint("models/online-speaker-change-detector/checkpoints/epoch=102.ckpt")
-    sherpa_model = sherpa_onnx.OnlineRecognizer(
+    sherpa_model = sherpa_onnx.OnlineRecognizer.from_transducer(
             tokens="models/sherpa/tokens.txt",
             encoder="models/sherpa/encoder.onnx",
             decoder="models/sherpa/decoder.onnx",
@@ -94,7 +94,7 @@ def main(args):
             rule2_min_trailing_silence=2.0,
             rule3_min_utterance_length=300,  
             decoding_method="modified_beam_search",
-            max_feature_vectors=1000,  # 10 seconds
+            #max_feature_vectors=1000,  # 10 seconds
         )
 
 
