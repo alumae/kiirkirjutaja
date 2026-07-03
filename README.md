@@ -17,6 +17,8 @@ It consists of the following components:
   
 
 ## News
+  * 2026-07-03: Migrated to bewer and more accruare ASR model (https://huggingface.co/TalTechNLP/streaming-zipformer-large.et-en/tree/main)
+
   * 2023-04-18: fixed an issue which caused words at sentence ends not to be recognizer correctly in some cases.
 
   * 2023-03-30: *Major rewrite*: Now uses end-to-end streaming transducer models trained using [Icefall](https://github.com/k2-fsa/icefall).
