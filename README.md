@@ -17,7 +17,7 @@ It consists of the following components:
   
 
 ## News
-  * 2026-07-03: Migrated to bewer and more accruare ASR model (https://huggingface.co/TalTechNLP/streaming-zipformer-large.et-en/tree/main)
+  * 2026-07-03: Migrated to better and more accurate ASR model (https://huggingface.co/TalTechNLP/streaming-zipformer-large.et-en)
 
   * 2023-04-18: fixed an issue which caused words at sentence ends not to be recognizer correctly in some cases.
 
